@@ -5,6 +5,7 @@ class UserRole(str, Enum):
     student = "student"
     supervisor = "supervisor"
     admin = "admin"
+    patient = "patient"
 
 
 class Gender(str, Enum):

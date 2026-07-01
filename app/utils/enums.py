@@ -1,17 +1,13 @@
-from enum import Enum
+from app.models.enums import UserRole
 
-
-class UserRole(str, Enum):
-	DOCTOR = "doctor"
-	PATIENT = "patient"
-
-
-USER_ROLES = {UserRole.DOCTOR.value, UserRole.PATIENT.value}
+USER_ROLES = {UserRole.student.value, UserRole.supervisor.value, UserRole.admin.value, UserRole.patient.value}
 ROLE_ALIASES = {
-	"doctor": UserRole.DOCTOR.value,
+    "student": UserRole.student.value,
+    "supervisor": UserRole.supervisor.value,
+    "admin": UserRole.admin.value,
+    "patient": UserRole.patient.value,
 }
 
-
 def normalize_role(role: str) -> str:
-	normalized = role.strip().lower()
-	return ROLE_ALIASES.get(normalized, normalized)
+    normalized = role.strip().lower()
+    return ROLE_ALIASES.get(normalized, normalized)

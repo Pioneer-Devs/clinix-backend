@@ -11,7 +11,10 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 
-
+# ---------------------------------------------------------------------------
+# Password utilities
+# Argon2 is used over bcrypt for stronger memory-hard hashing.
+# auto_error=False on bearer_scheme allows fallback to cookie-based auth.
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 bearer_scheme= HTTPBearer(auto_error=False)
 
@@ -24,6 +27,10 @@ def hash_password(password:str) -> str:
 def verify_password(plain_password: str, password_hash: str) -> bool:
 	return pwd_context.verify(plain_password, password_hash)
 
+# ---------------------------------------------------------------------------
+# Token creation
+# Each token is typed (access, refresh, password_reset) to prevent
+# tokens from being reused across different flows.
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
 	token_data = data.copy()
 	expires_delta = expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -52,6 +59,10 @@ def create_password_reset_token(user_id: UUID) -> str:
 		algorithm=settings.ALGORITHM,
 	)
 
+# ---------------------------------------------------------------------------
+# Token decoding
+# decode_typed_token is used for refresh, reset, and verify flows to ensure
+# the token matches the expected context before proceeding.
 def decode_typed_token(token: str, expected_type: str) -> dict:
 	try:
 		payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
@@ -63,12 +74,16 @@ def decode_typed_token(token: str, expected_type: str) -> dict:
 
 	return payload
 
-_CODE_ALPHABET = string.ascii_uppercase + string.digits
-
+# ---------------------------------------------------------------------------
+# Verification code generator
+# Used for email verification (account activation) and password resets.
 def generate_verification_code() -> str:
 	return "".join(secrets.choice(_CODE_ALPHABET) for _ in range(6))
 
-
+# ---------------------------------------------------------------------------
+# Request auth & current user
+# Token is extracted from the Authorization header first, falling back to
+# the access_token cookie for browser-based clients.
 def _extract_token(request: Request, credentials: Optional[HTTPAuthorizationCredentials]) -> str:
 	if credentials is not None:
 		return credentials.credentials
@@ -117,6 +132,10 @@ def get_current_user(
 
     return user
 
+# ---------------------------------------------------------------------------
+# Role-based access control (RBAC)
+# require_roles() is a factory — pass one or more roles and it returns a
+# FastAPI dependency that enforces access at the route level.
 def require_roles(*roles: str):
 	normalized_roles = {role.strip().lower() for role in roles}
 
@@ -134,4 +153,7 @@ def require_doctor():
 
 
 def require_supervisor():
+	return require_roles("admin")
+
+def require_patient():
 	return require_roles("patient")
