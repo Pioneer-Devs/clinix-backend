@@ -18,7 +18,7 @@ class WalletRecord(SQLModel, table=True):
     patient_id: UUID = Field(foreign_key="patients.id", index=True)
     encounter_id: UUID = Field(foreign_key="encounters.id", unique=True)  # One wallet push per encounter
 
-    # Chekk integration
+    # External wallet integration
     chekk_record_id: Optional[str] = Field(default=None, max_length=100)
     qr_payload: str                          # e.g. "CLINIX-ENC-<uuid>-<date>"
     encrypted_summary: str                   # AES-256 encrypted, base64-encoded JSON

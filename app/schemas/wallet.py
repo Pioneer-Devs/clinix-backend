@@ -13,7 +13,6 @@ class WalletRecordRead(SQLModel):
     id: UUID
     patient_id: UUID
     encounter_id: UUID
-    chekk_record_id: Optional[str]
     qr_payload: str
     status: WalletRecordStatus
     pushed_at: Optional[datetime]

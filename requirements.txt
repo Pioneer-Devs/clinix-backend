@@ -12,3 +12,5 @@ httpx
 python-dotenv
 sqlmodel
 PyJWT
+pytest
+pytest-asyncio

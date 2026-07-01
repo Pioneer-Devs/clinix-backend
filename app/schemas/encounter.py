@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlmodel import SQLModel
 
 from app.models.enums import Severity, EncounterStatus
+from app.schemas.patient import PatientRead
 
 class EncounterCreate(SQLModel):
     patient_id: UUID
@@ -12,11 +13,6 @@ class EncounterCreate(SQLModel):
     severity: Optional[Severity] = None
     associated_symptoms: List[str] = []
     consent_obtained: bool = False
-
-
-class EncounterPreAIDiagnosis(SQLModel):
-    """Student submits their own diagnosis before seeing AI results."""
-    preliminary_diagnosis: str
 
 
 class EncounterUpdate(SQLModel):
@@ -33,6 +29,10 @@ class EncounterUpdate(SQLModel):
 
 class SupervisorReview(SQLModel):
     approved: bool
+    notes: Optional[str] = None
+
+
+class SupervisorDecision(SQLModel):
     notes: Optional[str] = None
 
 
@@ -66,3 +66,8 @@ class EncounterRead(SQLModel):
     created_at: datetime
     updated_at: datetime
     finalized_at: Optional[datetime]
+
+
+class EncounterDetail(EncounterRead):
+    patient: PatientRead
+    activity_timeline: List[Dict[str, Any]]

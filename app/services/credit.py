@@ -1,4 +1,6 @@
 from app.models.enums import CreditCategory
+from app.models.credit import ClinicalCredit
+from app.services.portfolio_signer import sign_credit
 
 # ── Credit calculation logic ───────────────────────────────────────────────────
 
@@ -32,3 +34,36 @@ def calculate_provisional_credits(encounter) -> dict[str, int]:
         breakdown[CreditCategory.treatment.value] = CREDIT_RULES[CreditCategory.treatment]
 
     return breakdown
+
+
+def create_verified_credits(db, encounter, supervisor_id):
+    breakdown = encounter.credit_breakdown or calculate_provisional_credits(encounter)
+    credits: list[ClinicalCredit] = []
+
+    for category_value, points in breakdown.items():
+        category = CreditCategory(category_value)
+        existing = (
+            db.query(ClinicalCredit)
+            .filter(
+                ClinicalCredit.encounter_id == encounter.id,
+                ClinicalCredit.category == category,
+            )
+            .first()
+        )
+        if existing:
+            credits.append(existing)
+            continue
+
+        credit = ClinicalCredit(
+            student_id=encounter.student_id,
+            encounter_id=encounter.id,
+            supervisor_id=supervisor_id,
+            category=category,
+            points=points,
+            verified=True,
+        )
+        credit.signed_hash = sign_credit(credit)
+        db.add(credit)
+        credits.append(credit)
+
+    return credits

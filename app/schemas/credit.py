@@ -23,3 +23,10 @@ class PortfolioSummary(SQLModel):
     clinical_hours: int
     competencies: dict
     verified_procedures: List[ClinicalCreditRead]
+
+
+class PortfolioStats(SQLModel):
+    credits: dict
+    skills: dict
+    activities: dict
+    encounters: dict

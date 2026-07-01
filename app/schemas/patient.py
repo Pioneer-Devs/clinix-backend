@@ -28,8 +28,11 @@ class PatientRead(SQLModel):
     address: Optional[str]
     emergency_contact_name: Optional[str]
     emergency_contact_phone: Optional[str]
-    chekk_wallet_id: Optional[str]
     created_at: datetime
+
+
+class PatientSearchResult(PatientRead):
+    age: int
 
 
 class PatientQueueItem(SQLModel):
