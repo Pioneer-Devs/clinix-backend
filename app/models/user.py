@@ -20,9 +20,12 @@ class UserBase(SQLModel):
     last_name: str = Field(max_length=100)
     role: UserRole = Field(default=UserRole.student)
     year_of_study: Optional[int] = Field(default=None)          # Students only
+    matric_number: Optional[str] = Field(default=None, max_length=50)  # Students only
     hospital: Optional[str] = Field(default=None, max_length=100)
     mdcn_reg_no: Optional[str] = Field(default=None, max_length=50)  # Supervisors only
     is_active: bool = Field(default=True)
+    is_verified: bool = Field(default=False)
+    verification_code: Optional[str] = Field(default=None, max_length=10)
 
 
 class User(UserBase, table=True):

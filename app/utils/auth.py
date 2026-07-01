@@ -10,6 +10,9 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
+from app.models.user import User
+
+_CODE_ALPHABET = string.digits
 
 # ---------------------------------------------------------------------------
 # Password utilities

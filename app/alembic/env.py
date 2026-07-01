@@ -1,4 +1,6 @@
 import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
@@ -14,7 +16,10 @@ if config.config_file_name is not None:
 
 config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
 
-target_metadata = None
+from sqlmodel import SQLModel
+import app.models
+
+target_metadata = SQLModel.metadata
 
 
 def run_migrations_offline():
