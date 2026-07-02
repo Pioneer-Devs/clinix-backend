@@ -470,9 +470,8 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 ## Contact
 
-- **Project Lead**: Ademilua Adeola — [adeola@clinix.ng](mailto:adeola@clinix.ng)
 - **Team**: Clinix Engineering Team
-- **Repository**: [github.com/your-org/clinix-backend](https://github.com/your-org/clinix-backend)
+- **Repository**: [https://github.com/Pioneer-Devs/clinix-backend](https://github.com/Pioneer-Devs/clinix-backend)
 
 ---
 
