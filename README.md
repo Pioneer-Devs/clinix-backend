@@ -188,6 +188,12 @@ REFRESH_TOKEN_EXPIRE_DAYS=7
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4
 
+# Ollama AI
+AI_ENGINE=ollama
+OLLAMA_URL=https://api.ollama.ai
+OLLAMA_MODEL=llama2
+OLLAMA_API_KEY=your-ollama-api-key-here
+
 # Chekk (Patient Data Wallets)
 CHEKK_API_KEY=chk_...
 CHEKK_API_URL=https://api.chekk.io/v1

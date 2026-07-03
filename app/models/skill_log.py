@@ -3,10 +3,13 @@ from uuid import UUID, uuid4
 from datetime import datetime
 
 from sqlmodel import SQLModel, Field, Relationship, Column
+from sqlalchemy import JSON
 from sqlalchemy.dialects.postgresql import JSONB
 
 if TYPE_CHECKING:
     from app.models.encounter import Encounter
+
+JSON_TYPE = JSON().with_variant(JSONB, "postgresql")
 
 
 # Registered skill names — extend as new MCP skills are added
@@ -27,11 +30,11 @@ class ActionSkillLog(SQLModel, table=True):
 
     # Raw input fed to the skill (symptoms, vitals, demographics)
     input_data: Optional[Dict[str, Any]] = Field(
-        default={}, sa_column=Column(JSONB, default=dict)
+        default={}, sa_column=Column(JSON_TYPE, default=dict)
     )
     # Structured output: {diagnosis_confidence, recommended_actions, urgency}
     output_data: Optional[Dict[str, Any]] = Field(
-        default={}, sa_column=Column(JSONB, default=dict)
+        default={}, sa_column=Column(JSON_TYPE, default=dict)
     )
     success: bool = Field(default=True)
     error_message: Optional[str] = Field(default=None)

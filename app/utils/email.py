@@ -46,5 +46,13 @@ def send_verification_email(to_email: str, code: str, first_name: str) -> None:
     msg.attach(MIMEText(f"Your Clinix verification code is: {code}", "plain"))
     msg.attach(MIMEText(html_body, "html"))
 
-    with _build_smtp_connection() as smtp:
-        smtp.sendmail(settings.EMAIL_FROM_EMAIL, to_email, msg.as_string())
+    try:
+        with _build_smtp_connection() as smtp:
+            smtp.sendmail(settings.EMAIL_FROM_EMAIL, to_email, msg.as_string())
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to send verification email to {to_email}: {e}")
+        # Print for visible terminal logging in test runner
+        print(f"Failed to send verification email to {to_email}: {e}")
+

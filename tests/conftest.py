@@ -9,10 +9,15 @@ from app.models.user import User
 from app.models.enums import UserRole
 from app.utils.auth import hash_password
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def setup_database():
-    """Ensure the database is set up. We assume Alembic has run."""
-    pass
+    """Ensure a clean database for each test by dropping and recreating all tables."""
+    from sqlmodel import SQLModel
+    import app.models  # load models to register them on SQLModel metadata
+    SQLModel.metadata.drop_all(engine)
+    SQLModel.metadata.create_all(engine)
+
+
 
 @pytest.fixture(scope="function")
 def db_session(setup_database):
@@ -88,11 +93,12 @@ def test_supervisor(db_session):
 def test_patient(db_session):
     from app.models.patient import Patient
     from app.models.enums import Gender
+    from datetime import date
     patient = Patient(
         first_name="John",
         last_name="Doe",
         gender=Gender.male,
-        date_of_birth="1990-01-01",
+        date_of_birth=date(1990, 1, 1),
         hospital_id="HOSP123",
         phone="08012345678",
         created_by_id=None

@@ -4,7 +4,9 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.enums import EncounterStatus
+from app.models.encounter import Encounter
+from app.models.enums import EncounterStatus, UserRole
+from app.models.patient import Patient
 from app.models.user import User
 from app.schemas.encounter import (
     EncounterCreate,
@@ -14,6 +16,7 @@ from app.schemas.encounter import (
     SupervisorDecision,
 )
 from app.services import encounter as encounter_service
+from app.services.mcp_orchestrator import run_ai_analysis
 from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/encounters", tags=["Encounters"])
@@ -54,6 +57,35 @@ def update_encounter(
     current_user: User = Depends(get_current_user),
 ):
     return encounter_service.update_encounter(db, encounter_id, payload, current_user)
+
+
+@router.post("/{encounter_id}/ai-analyze")
+def ai_analyze_encounter(
+    encounter_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Run AI clinical analysis on this encounter (PRD endpoint).
+
+    Triggers the full AI + MCP pipeline and stores results on the encounter.
+    """
+    encounter = db.get(Encounter, encounter_id)
+    if not encounter:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Encounter not found")
+
+    if current_user.role == UserRole.student and encounter.student_id != current_user.id:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    patient = db.get(Patient, encounter.patient_id)
+    analysis = run_ai_analysis(db=db, encounter=encounter, patient=patient, user=current_user)
+
+    return {
+        "encounter_id": str(encounter_id),
+        "status": "completed",
+        "analysis": analysis,
+    }
 
 
 @router.post("/{encounter_id}/finalize", response_model=EncounterRead)

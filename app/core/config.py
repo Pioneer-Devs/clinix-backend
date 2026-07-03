@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     PASSWORD_RESET_EXPIRE_MINUTES: int = 10
     EMAIL_VERIFY_EXPIRE_MINUTES: int = 15
 
+    AI_ENGINE: str = "mock"
+    OLLAMA_URL: str = "http://127.0.0.1:11434"
+    OLLAMA_MODEL: str = "llama2"
+    OLLAMA_API_KEY: Optional[str] = None
+
     EMAIL_FROM_EMAIL: str
     EMAIL_FROM_NAME: str
     SMTP_HOST: str 

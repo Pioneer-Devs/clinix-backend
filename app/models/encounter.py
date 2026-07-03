@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 from datetime import datetime
 
 from sqlmodel import SQLModel, Field, Relationship, Column
-from sqlalchemy import String, Text, Numeric
+from sqlalchemy import String, Text, Numeric, JSON
 from sqlalchemy.dialects.postgresql import JSONB
 
 from app.models.enums import EncounterStatus, Severity
@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from app.models.credit import ClinicalCredit
     from app.models.wallet import WalletRecord
     from app.models.skill_log import ActionSkillLog
+
+JSON_TYPE = JSON().with_variant(JSONB, "postgresql")
 
 
 class Encounter(SQLModel, table=True):
@@ -35,7 +37,7 @@ class Encounter(SQLModel, table=True):
     severity: Optional[Severity] = Field(default=None)
     # List[str] — stored as JSONB e.g. ["fever", "headache", "chills"]
     associated_symptoms: Optional[List[Any]] = Field(
-        default=[], sa_column=Column(JSONB, default=list)
+        default=[], sa_column=Column(JSON_TYPE, default=list)
     )
 
     # ── Patient Consent ───────────────────────────────────────────────────────
@@ -50,11 +52,11 @@ class Encounter(SQLModel, table=True):
     )
     # List[{condition, probability}]
     ai_differential: Optional[List[Any]] = Field(
-        default=[], sa_column=Column(JSONB, default=list)
+        default=[], sa_column=Column(JSON_TYPE, default=list)
     )
     # List[{skill, actions}]
     ai_actions_triggered: Optional[List[Any]] = Field(
-        default=[], sa_column=Column(JSONB, default=list)
+        default=[], sa_column=Column(JSON_TYPE, default=list)
     )
 
     # ── Student Pre-AI Diagnosis (anti-gaming) ────────────────────────────────
@@ -66,7 +68,7 @@ class Encounter(SQLModel, table=True):
     # ── Physical Exam ─────────────────────────────────────────────────────────
     # {temperature, blood_pressure, pulse, spo2, respiratory_rate, weight, height}
     vitals: Optional[Dict[str, Any]] = Field(
-        default={}, sa_column=Column(JSONB, default=dict)
+        default={}, sa_column=Column(JSON_TYPE, default=dict)
     )
     exam_notes: Optional[str] = Field(default=None, sa_column=Column(Text))
 
@@ -74,7 +76,7 @@ class Encounter(SQLModel, table=True):
     working_diagnosis: Optional[str] = Field(default=None, sa_column=Column(Text))
     # List[str]
     investigations: Optional[List[Any]] = Field(
-        default=[], sa_column=Column(JSONB, default=list)
+        default=[], sa_column=Column(JSON_TYPE, default=list)
     )
     treatment_plan: Optional[str] = Field(default=None, sa_column=Column(Text))
     follow_up: Optional[str] = Field(default=None, max_length=50)
@@ -89,7 +91,7 @@ class Encounter(SQLModel, table=True):
     credits_earned: int = Field(default=0)       # Set only after supervisor approval
     # {history_taking: 2, physical_exam: 2, diagnosis: 2, treatment: 2, communication: 1}
     credit_breakdown: Optional[Dict[str, Any]] = Field(
-        default={}, sa_column=Column(JSONB, default=dict)
+        default={}, sa_column=Column(JSON_TYPE, default=dict)
     )
 
     # ── Metadata ──────────────────────────────────────────────────────────────

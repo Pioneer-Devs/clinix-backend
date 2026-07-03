@@ -3,12 +3,15 @@ from uuid import UUID, uuid4
 from datetime import datetime
 
 from sqlmodel import SQLModel, Field, Relationship, Column
+from sqlalchemy import JSON
 from sqlalchemy.dialects.postgresql import JSONB
 
 from app.models.enums import ActivityType
 
 if TYPE_CHECKING:
     from app.models.user import User
+
+JSON_TYPE = JSON().with_variant(JSONB, "postgresql")
 
 
 class Activity(SQLModel, table=True):
@@ -20,7 +23,7 @@ class Activity(SQLModel, table=True):
     # Flexible context bag: {encounter_id, patient_name, credits_earned, etc.}
     # Note: "metadata" is reserved by SQLAlchemy — using event_data instead.
     event_data: Optional[Dict[str, Any]] = Field(
-        default={}, sa_column=Column(JSONB, default=dict)
+        default={}, sa_column=Column(JSON_TYPE, default=dict)
     )
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
