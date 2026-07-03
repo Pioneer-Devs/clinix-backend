@@ -1,9 +1,9 @@
-from typing import Optional, List, TYPE_CHECKING
-from uuid import UUID, uuid4
 from datetime import date, datetime
+from typing import List, Optional, TYPE_CHECKING
+from uuid import UUID, uuid4
 
-from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy import String
+from sqlmodel import Column, Field, Relationship, SQLModel
 
 from app.models.enums import Gender
 
@@ -26,6 +26,10 @@ class PatientBase(SQLModel):
     emergency_contact_name: Optional[str] = Field(default=None, max_length=100)
     emergency_contact_phone: Optional[str] = Field(default=None, max_length=20)
     chekk_wallet_id: Optional[str] = Field(default=None, max_length=100)
+    solid_pod_url: Optional[str] = Field(default=None, max_length=255)
+    solid_web_id: Optional[str] = Field(default=None, max_length=255)
+    solid_token_id: Optional[str] = Field(default=None, max_length=255)
+    solid_token_secret: Optional[str] = Field(default=None, max_length=255)
     insurance_id: Optional[str] = Field(default=None, max_length=50)
 
 
@@ -36,7 +40,6 @@ class Patient(PatientBase, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    # Relationships
     encounters: List["Encounter"] = Relationship(back_populates="patient")
     wallet_records: List["WalletRecord"] = Relationship(back_populates="patient")
 

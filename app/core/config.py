@@ -15,22 +15,25 @@ class Settings(BaseSettings):
     EMAIL_VERIFY_EXPIRE_MINUTES: int = 15
 
     AI_ENGINE: str = "mock"
+    OPENAI_BASE_URL: str = "https://api.openai.com"
+    OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_API_KEY: Optional[str] = None
     OLLAMA_URL: str = "http://127.0.0.1:11434"
     OLLAMA_MODEL: str = "llama2"
     OLLAMA_API_KEY: Optional[str] = None
 
     EMAIL_FROM_EMAIL: str
     EMAIL_FROM_NAME: str
-    SMTP_HOST: str 
-    SMTP_PORT: int 
+    SMTP_HOST: str
+    SMTP_PORT: int
     SMTP_USER: Optional[str] = None
     SMTP_PASSWORD: Optional[str] = None
     SMTP_USE_TLS: bool = False
-    FRONTEND_URL: str 
+    FRONTEND_URL: str
     COOKIE_DOMAIN: Optional[str] = None
     COOKIE_SECURE: bool = False
-
-
+    SOLID_SERVER_URL: str = "http://localhost:3000"
+    SOLID_BASE_URL: Optional[str] = None  # public-facing URL; defaults to SOLID_SERVER_URL if not set
 
     @field_validator("SMTP_PORT", mode="before")
     @classmethod

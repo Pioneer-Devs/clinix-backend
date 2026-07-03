@@ -118,3 +118,40 @@ def supervisor_auth_headers(client, test_supervisor):
     response = client.post("/api/v1/auth/login", data={"username": test_supervisor.email, "password": "password123"})
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+# ── Auth-bypass fixtures ─────────────────────────────────────────────────────
+# These override `get_current_user` so tests never touch the auth module.
+
+from app.utils.auth import get_current_user
+
+@pytest.fixture(scope="function")
+def authed_student_client(db_session, test_student):
+    """TestClient with auth overridden to return test_student directly."""
+    def _override_get_db():
+        yield db_session
+
+    def _override_get_current_user():
+        return test_student
+
+    app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[get_current_user] = _override_get_current_user
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+def authed_supervisor_client(db_session, test_supervisor):
+    """TestClient with auth overridden to return test_supervisor directly."""
+    def _override_get_db():
+        yield db_session
+
+    def _override_get_current_user():
+        return test_supervisor
+
+    app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[get_current_user] = _override_get_current_user
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()

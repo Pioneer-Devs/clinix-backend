@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -13,12 +13,13 @@ router = APIRouter(prefix="/patients", tags=["Patients"])
 
 
 @router.post("", response_model=PatientRead, status_code=status.HTTP_201_CREATED)
-def create_patient(
+async def create_patient(
     payload: PatientCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return patient_service.create_patient(db, payload)
+    return await patient_service.create_patient(db, payload, background_tasks)
 
 
 @router.get("/search", response_model=list[PatientSearchResult])

@@ -8,6 +8,7 @@ from app.api.v1.inventory import router as inventory_router
 from app.api.v1.mcp_skills import router as mcp_router
 from app.api.v1.patients import router as patients_router
 from app.api.v1.portfolio import router as portfolio_router
+from app.api.v1.wallets import legacy_router as legacy_wallets_router
 from app.api.v1.wallets import router as wallets_router
 
 api_router = APIRouter(prefix="/api/v1")
@@ -19,4 +20,5 @@ api_router.include_router(mcp_router)
 api_router.include_router(inventory_router)
 api_router.include_router(portfolio_router)
 api_router.include_router(wallets_router)
+api_router.include_router(legacy_wallets_router)
 api_router.include_router(activity_router)

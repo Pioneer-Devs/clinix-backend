@@ -163,12 +163,13 @@ def _extract_json(text: str) -> dict[str, Any]:
     return json.loads(payload)
 
 
-def _build_ollama_payload(
+def _build_chat_payload(
     chief_complaint: str,
     associated_symptoms: list[str] | None,
     vitals: dict[str, Any] | None,
     patient_age: int | None,
     patient_gender: str | None,
+    model: str,
 ) -> dict[str, Any]:
     patient_context = {
         key: value
@@ -192,7 +193,7 @@ def _build_ollama_payload(
         symptom_text += f"\nPatient: {context_text}"
 
     return {
-        "model": settings.OLLAMA_MODEL,
+        "model": model,
         "messages": [
             {"role": "system", "content": OLLAMA_SYSTEM_PROMPT},
             {"role": "user", "content": symptom_text},
@@ -203,24 +204,28 @@ def _build_ollama_payload(
     }
 
 
-def _run_ollama_analysis(
+def _run_chat_completion_analysis(
     chief_complaint: str,
     associated_symptoms: list[str] | None = None,
     vitals: dict[str, Any] | None = None,
     patient_age: int | None = None,
     patient_gender: str | None = None,
+    base_url: str | None = None,
+    model: str | None = None,
+    api_key: str | None = None,
 ) -> dict[str, Any]:
-    url = settings.OLLAMA_URL.rstrip("/") + "/v1/chat/completions"
+    url = (base_url or settings.OLLAMA_URL).rstrip("/") + "/v1/chat/completions"
     headers = {"Content-Type": "application/json"}
-    if settings.OLLAMA_API_KEY:
-        headers["Authorization"] = f"Bearer {settings.OLLAMA_API_KEY}"
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
 
-    payload = _build_ollama_payload(
+    payload = _build_chat_payload(
         chief_complaint,
         associated_symptoms,
         vitals,
         patient_age,
         patient_gender,
+        model or settings.OLLAMA_MODEL,
     )
 
     response = httpx.post(url, json=payload, headers=headers, timeout=20.0)
@@ -320,14 +325,35 @@ def analyze_symptoms(
     start_time = time.monotonic()
     engine = settings.AI_ENGINE.lower().strip()
 
-    if engine == "ollama":
+    if engine == "openai":
         try:
-            result = _run_ollama_analysis(
+            result = _run_chat_completion_analysis(
                 chief_complaint,
                 associated_symptoms,
                 vitals,
                 patient_age,
                 patient_gender,
+                base_url=settings.OPENAI_BASE_URL,
+                model=settings.OPENAI_MODEL,
+                api_key=settings.OPENAI_API_KEY,
+            )
+        except Exception as exc:
+            result = _local_symptom_analysis(chief_complaint, associated_symptoms, vitals)
+            result["note"] = (
+                "OpenAI analysis failed - falling back to local pattern-based analysis. "
+                f"Error: {str(exc)}"
+            )
+    elif engine == "ollama":
+        try:
+            result = _run_chat_completion_analysis(
+                chief_complaint,
+                associated_symptoms,
+                vitals,
+                patient_age,
+                patient_gender,
+                base_url=settings.OLLAMA_URL,
+                model=settings.OLLAMA_MODEL,
+                api_key=settings.OLLAMA_API_KEY,
             )
         except Exception as exc:
             result = _local_symptom_analysis(chief_complaint, associated_symptoms, vitals)
@@ -344,9 +370,9 @@ def analyze_symptoms(
     elapsed_ms = int((time.monotonic() - start_time) * 1000)
     metadata = result.get("analysis_metadata", {})
     metadata.update({
-        "engine": "ollama" if engine == "ollama" else "clinix-ai-v1-mock",
+        "engine": engine if engine in {"openai", "ollama"} else "clinix-ai-v1-mock",
         "processing_time_ms": elapsed_ms,
-        "model": settings.OLLAMA_MODEL if engine == "ollama" else "gpt-4-clinical-mock",
+        "model": settings.OPENAI_MODEL if engine == "openai" else settings.OLLAMA_MODEL if engine == "ollama" else "gpt-4-clinical-mock",
         "patient_context": {
             "age": patient_age,
             "gender": patient_gender,

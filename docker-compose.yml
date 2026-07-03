@@ -13,6 +13,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - default
+      - clinix_net
     command: >
       sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
@@ -35,3 +38,9 @@ services:
 
 volumes:
   postgres_data:
+
+networks:
+  default: {}
+  clinix_net:
+    external: true
+    name: clinix_net
