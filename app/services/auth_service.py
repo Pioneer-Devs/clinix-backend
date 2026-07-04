@@ -34,8 +34,6 @@ def register_user(payload: UserCreate, background_tasks: BackgroundTasks, db: Se
             detail="Patient accounts cannot be registered. Patients access records via QR code.",
         )
 
-    verification_code = generate_verification_code()
-
     user = User(
         email=email,
         password_hash=hash_password(payload.password),
@@ -46,16 +44,13 @@ def register_user(payload: UserCreate, background_tasks: BackgroundTasks, db: Se
         matric_number=payload.matric_number,
         hospital=payload.hospital,
         mdcn_reg_no=payload.mdcn_reg_no,
-        is_verified=False,
-        verification_code=verification_code,
+        is_verified=True,
+        verification_code=None,
     )
 
     db.add(user)
     db.commit()
     db.refresh(user)
-
-    # Send verification email (fire-and-forget for now)
-    background_tasks.add_task(send_verification_email, email, verification_code, user.first_name)
 
     return user
 
@@ -120,12 +115,6 @@ def authenticate_user(form_data: OAuth2PasswordRequestForm, response: Response, 
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password.",
             headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    if not user.is_verified:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Please verify your email before logging in.",
         )
 
     token_data = {"sub": str(user.id), "role": user.role.value}
