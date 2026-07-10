@@ -2,7 +2,7 @@ import base64
 import hashlib
 import json
 from datetime import datetime, timedelta
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 from uuid import uuid4
 
 import httpx
@@ -121,6 +121,7 @@ async def push_patient_wallet_to_pod(db, patient_id):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Patient Solid POD credentials are not provisioned")
 
     if wallet_record.status == WalletRecordStatus.pushed and wallet_record.solid_pod_url:
+        pod_url_encoded = quote(wallet_record.solid_pod_url, safe="")
         return {
             "qr_url": f"{settings.FRONTEND_URL}/wallet/view?pod={pod_url_encoded}&enc={str(encounter.id)}",
             "solid_pod_url": wallet_record.solid_pod_url,

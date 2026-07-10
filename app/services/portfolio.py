@@ -36,17 +36,28 @@ def get_portfolio_summary(db: Session, user: User) -> dict:
 
 
 def get_portfolio_stats(db: Session, user: User) -> dict:
+    from app.models.enums import UserRole
+    
+    is_supervisor = user.role == UserRole.supervisor
+    
+    if is_supervisor:
+        encounters_filter = Encounter.supervisor_id == user.id
+        credits_filter = ClinicalCredit.supervisor_id == user.id if hasattr(ClinicalCredit, 'supervisor_id') else ClinicalCredit.student_id == user.id # Credits might not map to supervisor
+    else:
+        encounters_filter = Encounter.student_id == user.id
+        credits_filter = ClinicalCredit.student_id == user.id
+
     return {
-        "credits": _count_by(db, ClinicalCredit.category, ClinicalCredit.student_id == user.id),
+        "credits": _count_by(db, ClinicalCredit.category, credits_filter),
         "skills": _count_by(
             db,
             ActionSkillLog.skill_name,
             ActionSkillLog.encounter_id.in_(
-                db.query(Encounter.id).filter(Encounter.student_id == user.id)
+                db.query(Encounter.id).filter(encounters_filter)
             ),
         ),
         "activities": _count_by(db, Activity.activity_type, Activity.user_id == user.id),
-        "encounters": _count_by(db, Encounter.status, Encounter.student_id == user.id),
+        "encounters": _count_by(db, Encounter.status, encounters_filter),
     }
 
 
