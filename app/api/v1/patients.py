@@ -32,6 +32,23 @@ def search_patients(
     return patient_service.search_patients(db, q, limit)
 
 
+@router.post("/{patient_id}/provision-solid", status_code=status.HTTP_200_OK)
+async def reprovision_solid(
+    patient_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Manually re-trigger Solid POD provisioning for a patient (debug/repair endpoint)."""
+    patient = patient_service.get_patient_or_404(db, patient_id)
+    result = await patient_service.provision_solid_pod(str(patient_id), patient.full_name)
+    patient.solid_pod_url = result["solid_pod_url"]
+    patient.solid_web_id = result["solid_web_id"]
+    patient.solid_token_id = result["solid_token_id"]
+    patient.solid_token_secret = result["solid_token_secret"]
+    db.commit()
+    return {"status": "provisioned", "solid_pod_url": result["solid_pod_url"]}
+
+
 @router.get("/{patient_id}", response_model=PatientRead)
 def get_patient(
     patient_id: UUID,
