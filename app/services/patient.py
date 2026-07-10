@@ -141,7 +141,15 @@ async def _provision_and_update(patient_id: str, patient_name: str):
     try:
         solid_data = await provision_solid_pod(patient_id, patient_name)
     except Exception as exc:
-        logger.warning("Solid POD provisioning failed for patient %s: %s", patient_id, exc)
+        import traceback
+        logger.error(
+            "Solid POD provisioning FAILED for patient %s\nError: %s\nTraceback:\n%s",
+            patient_id,
+            exc,
+            traceback.format_exc(),
+        )
+        print(f"\n❌ SOLID PROVISION ERROR for patient {patient_id}: {exc}", flush=True)
+        print(traceback.format_exc(), flush=True)
         return
 
     # Open a fresh session for the background update
