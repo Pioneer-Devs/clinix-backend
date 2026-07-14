@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query
 
 from app.core.database import get_db
 from app.schemas.wallet import WalletConfirmPushRequest, WalletQRRead, WalletRecordRead
@@ -45,3 +47,14 @@ def confirm_patient_wallet_push(
 @legacy_router.get("/{patient_id}/qr", response_model=WalletQRRead)
 def get_legacy_patient_wallet_qr(patient_id, db=Depends(get_db), current_user=Depends(get_current_user)):
     return _get_patient_wallet_qr(patient_id, db, current_user)
+
+
+@legacy_router.post("/recover")
+async def recover_wallet_record(
+    enc: UUID = Query(..., description="Encounter ID from the wallet QR link"),
+    db=Depends(get_db),
+):
+    """Public endpoint (no auth). Re-provisions the Solid pod and re-pushes
+    encounter data when the pod has been wiped after a redeploy."""
+    return await wallet_service.recover_wallet_record(db, str(enc))
+

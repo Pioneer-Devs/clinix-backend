@@ -107,7 +107,7 @@ def confirm_solid_push(db, patient_id, solid_pod_url):
     return wallet_record
 
 
-async def push_patient_wallet_to_pod(db, patient_id):
+async def push_patient_wallet_to_pod(db, patient_id, force=False):
     wallet_record = get_latest_patient_wallet_record(db, patient_id)
     if not wallet_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No wallet record exists for this patient")
@@ -120,7 +120,7 @@ async def push_patient_wallet_to_pod(db, patient_id):
     if not patient.solid_pod_url or not patient.solid_token_id or not patient.solid_token_secret:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Patient Solid POD credentials are not provisioned")
 
-    if wallet_record.status == WalletRecordStatus.pushed and wallet_record.solid_pod_url:
+    if not force and wallet_record.status == WalletRecordStatus.pushed and wallet_record.solid_pod_url:
         pod_url_encoded = quote(wallet_record.solid_pod_url, safe="")
         return {
             "qr_url": f"{settings.FRONTEND_URL}/wallet/view?pod={pod_url_encoded}&enc={str(encounter.id)}",
@@ -155,6 +155,50 @@ async def push_patient_wallet_to_pod(db, patient_id):
         "qr_url": qr_url,
         "solid_pod_url": patient.solid_pod_url,
     }
+
+
+async def recover_wallet_record(db, encounter_id):
+    """Re-provision the Solid pod and re-push encounter data after a pod wipe.
+
+    This is designed to be called from a public (unauthenticated) endpoint so
+    that QR-code / wallet-link users can trigger self-healing recovery.
+    """
+    from app.services.patient import provision_solid_pod
+
+    wallet_record = (
+        db.query(WalletRecord)
+        .filter(WalletRecord.encounter_id == encounter_id)
+        .first()
+    )
+    if not wallet_record:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No wallet record found for this encounter")
+
+    patient = wallet_record.patient
+    if not patient:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found for this wallet record")
+
+    # Re-provision the Solid pod (creates a new account + pod + credentials)
+    try:
+        solid_data = await provision_solid_pod(str(patient.id), patient.full_name)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Solid pod re-provisioning failed: {exc}",
+        ) from exc
+
+    # Update the patient with new pod credentials
+    patient.solid_pod_url = solid_data["solid_pod_url"]
+    patient.solid_web_id = solid_data["solid_web_id"]
+    patient.solid_token_id = solid_data["solid_token_id"]
+    patient.solid_token_secret = solid_data["solid_token_secret"]
+    db.add(patient)
+    db.commit()
+    db.refresh(patient)
+
+    # Force re-push the encounter data to the fresh pod
+    return await push_patient_wallet_to_pod(db, patient.id, force=True)
 
 
 async def _fetch_solid_access_token(client, token_url, token_proof_url, patient, key):
